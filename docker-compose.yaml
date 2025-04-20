@@ -1,0 +1,171 @@
+version: '3.8'
+
+name: TheLogicalProject
+
+services:
+    database:
+        container_name: database
+        image: postgres:17
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+        ports:
+            - "5432:5432"
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - TheLogicalNetwork
+
+    initDB: 
+        container_name: initDB
+        build:
+            context: .
+            dockerfile: systemAPI/db.Dockerfile
+            args: 
+                DATABASE_URL: ${DATABASE_URL}
+        image: logical_initdb_image:latest
+        environment:
+            DATABASE_URL: ${DATABASE_URL}
+        networks:
+            - TheLogicalNetwork
+        depends_on:
+            database:
+                condition: service_healthy
+
+    kafka:
+        container_name: kafka
+        image: bitnami/kafka:latest
+        ports:
+            - "9092:9092"
+        environment:
+            KAFKA_CFG_NODE_ID: 0
+            KAFKA_CFG_PROCESS_ROLES: controller,broker
+            KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+            KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+            KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+            KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        healthcheck:
+            test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        command: 
+            - /bin/sh
+            - -c
+            - "sleep 10 && kafka-topics.sh --create --if-not-exists --bootstrap-server localhost:9092 --topic systemEvents --partitions 2 --replication-factor 1 & /opt/bitnami/scripts/kafka/run.sh"
+        networks:
+            - TheLogicalNetwork
+            
+    grafana:
+        container_name: grafana
+        build:
+            context: .
+            dockerfile: grafana/Dockerfile
+        image: logical_grafana_image:latest
+        environment: 
+            GF_LOG_LEVEL: warn
+            GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
+            GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_HOST: database
+            POSTGRES_PORT: 5432
+            LOKI_URL: ${LOKI_URL}
+        ports:
+            - "3000:3000"
+        networks:
+            - TheLogicalNetwork
+
+    loki:
+        container_name: loki
+        image: grafana/loki:latest
+        ports:
+            - "3100:3100"
+        networks:
+            - TheLogicalNetwork 
+
+    api: 
+        container_name: api
+        build:
+            context: .
+            dockerfile: systemAPI/Dockerfile
+            args: 
+                DATABASE_URL: ${DATABASE_URL}
+        image: logical_systemapi_image:latest
+        environment:
+            KAFKA_BROKERS: ${KAFKA_BROKERS}
+            DATABASE_URL: ${DATABASE_URL}
+            LOKI_URL: ${LOKI_URL}
+        ports:
+          - "80:80"
+        healthcheck:
+            test: ["CMD-SHELL", "curl -f http://localhost:80/api/health"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - TheLogicalNetwork
+        depends_on:
+            initDB:
+                condition: service_completed_successfully
+        develop:
+          watch:
+            - path: ./systemAPI/src
+              action: rebuild
+        restart: on-failure
+
+    freightIntegration: 
+        container_name: freightIntegration
+        build:
+            context: .
+            dockerfile: companyIntegration/Dockerfile
+        image: freight_companyintegration_image:latest
+        environment:
+            DATABASE_URL: ${DATABASE_URL}
+            KAFKA_BROKERS: ${KAFKA_BROKERS}
+            LOKI_URL: ${LOKI_URL}
+            COMPANY: freightCompany
+            API_URL: ${API_URL}
+        networks:
+            - TheLogicalNetwork
+        depends_on:
+            api:
+                condition: service_healthy
+        develop:
+          watch:
+            - path: ./companyIntegration/src
+              action: rebuild
+        restart: on-failure
+
+    warehouseIntegration: 
+        container_name: warehouseIntegration
+        build:
+            context: .
+            dockerfile: companyIntegration/Dockerfile
+        image: warehouse_companyintegration_image:latest
+        environment:
+            DATABASE_URL: ${DATABASE_URL}
+            KAFKA_BROKERS: ${KAFKA_BROKERS}
+            LOKI_URL: ${LOKI_URL}
+            COMPANY: warehouseCompany
+            API_URL: ${API_URL}
+        networks:
+            - TheLogicalNetwork
+        depends_on:
+            api:
+                condition: service_healthy
+        develop:
+          watch:
+            - path: ./companyIntegration/src
+              action: rebuild
+        restart: on-failure
+
+networks:
+  TheLogicalNetwork:
+    driver: bridge

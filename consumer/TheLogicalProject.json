@@ -1,0 +1,113 @@
+{
+  "v": 6,
+  "name": "TheLogicalProject",
+  "folders": [],
+  "requests": [
+    {
+      "v": "11",
+      "name": "getHealth",
+      "method": "GET",
+      "endpoint": "http://localhost/api/health",
+      "params": [],
+      "headers": [],
+      "preRequestScript": "",
+      "testScript": "",
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "body": {
+        "contentType": null,
+        "body": null
+      },
+      "requestVariables": [],
+      "responses": {}
+    },
+    {
+      "v": "11",
+      "name": "createRelation",
+      "method": "POST",
+      "endpoint": "http://localhost/api/relation",
+      "params": [],
+      "headers": [],
+      "preRequestScript": "",
+      "testScript": "// Set an environment variable\npw.env.set(\"id\", pw.response.body.id);",
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "body": {
+        "contentType": "application/json",
+        "body": "{\n  \"name\": \"hello\",\n  \"kvkNumber\": \"1249\"\n}"
+      },
+      "requestVariables": [],
+      "responses": {}
+    },
+    {
+      "v": "11",
+      "name": "getRelation",
+      "method": "GET",
+      "endpoint": "http://localhost/api/relation/<<id>>",
+      "params": [],
+      "headers": [],
+      "preRequestScript": "",
+      "testScript": "",
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "body": {
+        "contentType": null,
+        "body": null
+      },
+      "requestVariables": [],
+      "responses": {}
+    },
+    {
+      "v": "11",
+      "name": "updateRelation",
+      "method": "PUT",
+      "endpoint": "http://localhost/api/relation/<<id>>",
+      "params": [],
+      "headers": [],
+      "preRequestScript": "",
+      "testScript": "",
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "body": {
+        "contentType": "application/json",
+        "body": "{\n  \"name\": \"Coca cola\"\n}"
+      },
+      "requestVariables": [],
+      "responses": {}
+    },
+    {
+      "v": "11",
+      "name": "deleteRelation",
+      "method": "DELETE",
+      "endpoint": "http://localhost/api/relation/<<id>>",
+      "params": [],
+      "headers": [],
+      "preRequestScript": "",
+      "testScript": "",
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "body": {
+        "contentType": null,
+        "body": null
+      },
+      "requestVariables": [],
+      "responses": {}
+    }
+  ],
+  "auth": {
+    "authType": "none",
+    "authActive": true
+  },
+  "headers": [],
+  "_ref_id": "coll_m9lnzzdn_23ca2ac4-1288-4f7a-8693-40bd02325aca"
+}

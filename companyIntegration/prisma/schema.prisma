@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client"
+  binaryTargets = ["native"]
+  output   = "../src/utils/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Relations {
+  id        String   @id @default(cuid())
+  name      String
+  kvkNumber String
+  
+  owner     String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([kvkNumber, owner])
+}
