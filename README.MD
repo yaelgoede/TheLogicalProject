@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Logical Project is a microservices-based system designed to handle data integration, processing, and visualization. It provides a concept for managing relations and processing events through a collection of specialized services.
+The Logical Project is a microservices-based system designed to handle data integration, processing, and visualization. It provides a concept for managing a common data model and processing events through a collection of specialized services.
 
 ## Key Features
 
