@@ -14,8 +14,27 @@ export class RelationCreatedHandler implements IEventHandler {
         await logger.info('Processing relation created event', { id: eventData.id, data: eventData });
 
         try {
+
+            const existingRelation = await prisma.relations.findFirst({
+                where: { kvkNumber: eventData.kvkNumber, owner: process.env.COMPANY }
+            });
+
+            if(existingRelation) {
+                await prisma.relations.update({
+                    where: { id: existingRelation.id },
+                    data: {
+                        externalId: eventData.id,
+                        name: eventData.name,
+                        kvkNumber: eventData.kvkNumber
+                    }
+                });
+                await logger.info('Relation updated successfully', { id: eventData.id, data: eventData });
+                return;
+            }
+
             await prisma.relations.create({
                 data: {
+                    externalId: eventData.id,
                     name: eventData.name,
                     kvkNumber: eventData.kvkNumber,
                     owner: process.env.COMPANY
@@ -39,12 +58,13 @@ export class RelationUpdatedHandler implements IEventHandler {
         
         try {
             const relation = await prisma.relations.findFirst({
-                where: { kvkNumber: eventData.kvkNumber, owner: process.env.COMPANY }
+                where: { externalId: eventData.id, owner: process.env.COMPANY }
             });
 
             if (!relation) {
                 await prisma.relations.create({
                     data: {
+                        externalId: eventData.id,
                         name: eventData.name,
                         kvkNumber: eventData.kvkNumber,
                         owner: process.env.COMPANY
@@ -52,8 +72,9 @@ export class RelationUpdatedHandler implements IEventHandler {
                 });
             }else {
                 await prisma.relations.update({
-                    where: { id: relation.id },
+                    where: { id: relation.id, owner: process.env.COMPANY },
                     data: {
+                        externalId: eventData.id,
                         name: eventData.name,
                         kvkNumber: eventData.kvkNumber
                     }
@@ -78,7 +99,7 @@ export class RelationDeletedHandler implements IEventHandler {
         
         try {
             const relation = await prisma.relations.findFirst({
-                where: { kvkNumber: eventData.kvkNumber, owner: process.env.COMPANY }
+                where: { externalId: eventData.id, owner: process.env.COMPANY }
             });
             
             if (relation) {

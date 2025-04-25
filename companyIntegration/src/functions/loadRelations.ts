@@ -13,7 +13,10 @@ const logger = new LokiLogger(process.env.LOKI_URL, {
 export async function loadRelations(myTimer: Timer, context: InvocationContext): Promise<void> {
     const companyRelations = await prisma.relations.findMany({
         where: {
-            owner: process.env.COMPANY
+            AND: [
+                {owner: process.env.COMPANY},
+                {externalId: null}
+            ]
         }
     });
 
@@ -26,6 +29,11 @@ export async function loadRelations(myTimer: Timer, context: InvocationContext):
                 kvkNumber: relation.kvkNumber
             });
             logger.info(`Successfully created relation`, {id: relation.id});
+            await prisma.relations.update({
+                where: { id: relation.id, owner: process.env.COMPANY },
+                data: { externalId: relation.id }
+            });
+            logger.info(`Successfully updated integration relation`, {id: relation.id});
         } catch (error) {
             logger.error(`Failed to create relation`, {error: (error as Error).message, id: relation.id});
         }

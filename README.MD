@@ -98,7 +98,7 @@ The application follows a microservice architecture. Below is a high-level overv
 ![Application Architecture](architecture.drawio.svg)
 
 ## Dashboard preview
-[You can view a snapshot of the grafana dashboard here on raintank](https://snapshots.raintank.io/dashboard/snapshot/CVwonmisAMJPPKi0md30fEJvNqX8Al0p)
+[You can view a snapshot of the grafana dashboard here on raintank](https://snapshots.raintank.io/dashboard/snapshot/n2AosVqB62g9yRWJNN5zGaUpQcBcu81d)
 ### Syncronized relations
 In the image below you can see the syncronized relations between the different databases.
 ![relation table databases](/images/relations%20databases.png)

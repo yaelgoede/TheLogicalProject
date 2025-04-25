@@ -1,6 +1,9 @@
 import { app, InvocationContext, Timer } from "@azure/functions";
 import { LokiLogger } from '../utils/lokiLogger';
 import { PrismaClient } from '../utils/prisma/client';
+import { parse } from 'csv-parse/sync';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 const prisma = new PrismaClient();
 
@@ -10,28 +13,36 @@ const logger = new LokiLogger(process.env.LOKI_URL, {
 });
 
 export async function seedRelations(myTimer: Timer, context: InvocationContext): Promise<void> {
-    let shouldSeed = await prisma.relations.findFirst({
+    let shouldSeed = await prisma.relations.findMany({
         where: {
-            owner: process.env.COMPANY,
-            name: 'seed'
+            owner: process.env.COMPANY
         }
     })
 
     logger.info('Checking if relations need to be seeded');
 
-    if (!shouldSeed) {
+    if (shouldSeed.length < 1) {
         await logger.info('Seeding relations...');
-        const seedData = [
-            { name: 'seed', kvkNumber: '12345678', owner: process.env.COMPANY },
-            { name: 'Coca', kvkNumber: '12312312', owner: process.env.COMPANY },
-            { name: 'Cola', kvkNumber: '87654321', owner: process.env.COMPANY }
-        ];
+        
         await prisma.relations.deleteMany({
             where: {
                 owner: process.env.COMPANY
             }
         });
-        await prisma.relations.createMany({ data: seedData });
+        // Read CSV file from the function app's root directory
+        const csvContent = readFileSync(join(__dirname, '..', '..', '..', 'data', process.env.COMPANY, 'data.csv'), 'utf-8');
+        logger.info('CSV file read successfully');
+        const records = parse(csvContent, {
+            columns: true,
+            skip_empty_lines: true
+        });
+        await prisma.relations.createMany({ 
+            data: records.map((record: any) => ({
+                name: record.name,
+                kvkNumber: record.kvkNumber,
+                owner: process.env.COMPANY
+            })) 
+        });
         await logger.info('Relations seeded successfully');
     }
 }

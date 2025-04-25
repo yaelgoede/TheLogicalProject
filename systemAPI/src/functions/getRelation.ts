@@ -9,10 +9,10 @@ const logger = new LokiLogger(process.env.LOKI_URL, {
 });
 
 /**
- * Retrieves a relation by its ID from the database.
+ * Retrieves a relation by its ID and optionally kvkNumber from the database.
  * This function is exposed as an HTTP GET endpoint at 'relation/{id}'.
  * 
- * @param request - The HTTP request object containing the relation ID in the route parameters
+ * @param request - The HTTP request object containing the relation ID in the route parameters and kvkNumber in query
  * @param context - The Azure Functions invocation context
  * @returns Promise<HttpResponseInit> containing:
  *  - 200: The relation object if found
@@ -22,29 +22,36 @@ const logger = new LokiLogger(process.env.LOKI_URL, {
  */
 export async function getRelation(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-        const id = request.params.id;
+        const id = request.query.get('id');
+        const kvkNumber = request.query.get('kvkNumber');
 
-        if (!id) {
-            await logger.warn('Missing relation ID');
+        if (!id && !kvkNumber) {
+            await logger.warn('Missing required parameters', { id, kvkNumber });
             return {
                 status: 400,
-                jsonBody: { error: 'Relation ID is required' }
+                jsonBody: { error: 'Either id or kvkNumber is required' }
             };
         }
 
-        const relation = await prisma.relations.findUnique({
-            where: { id: id, owner: 'system' }
+        logger.info('Getting relation', { id, kvkNumber });
+
+        const relation = await prisma.relations.findFirst({
+            where: { 
+                owner: 'system',
+                ...(id && { id: id }),
+                ...(kvkNumber && { kvkNumber: kvkNumber })
+            }
         });
 
         if (!relation) {
-            await logger.warn('Relation not found', { id });
+            await logger.warn('Relation not found', { id, kvkNumber });
             return {
                 status: 404,
                 jsonBody: { error: 'Relation not found' }
             };
         }
 
-        await logger.info('Relation retrieved successfully', { id });
+        await logger.info('Relation retrieved successfully', { id, kvkNumber });
         return {
             status: 200,
             jsonBody: relation
@@ -60,7 +67,7 @@ export async function getRelation(request: HttpRequest, context: InvocationConte
 
 app.http('getRelation', {
     methods: ['GET'],
-    route: 'relation/{id}',
+    route: 'relation',
     authLevel: 'anonymous',
     handler: getRelation
 });

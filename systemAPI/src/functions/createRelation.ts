@@ -42,6 +42,7 @@ export async function createRelation(request: HttpRequest, context: InvocationCo
         const relation = await prisma.relations.create({
             data: {
                 owner: 'system',
+                externalId: null,
                 name: requestBody.name,
                 kvkNumber: requestBody.kvkNumber
             }

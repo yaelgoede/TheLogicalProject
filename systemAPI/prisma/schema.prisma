@@ -10,14 +10,17 @@ datasource db {
 }
 
 model Relations {
-  id        String   @id @default(cuid())
-  name      String
-  kvkNumber String
+  id         String   @id @default(cuid())
+    
+  externalId String?
+
+  name       String
+  kvkNumber  String
   
-  owner     String
+  owner      String
   
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([kvkNumber, owner])
 }
