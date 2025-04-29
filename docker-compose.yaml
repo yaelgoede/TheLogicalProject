@@ -1,6 +1,4 @@
-version: '3.8'
-
-name: TheLogicalProject
+name: thelogicalproject
 
 services:
     database:
